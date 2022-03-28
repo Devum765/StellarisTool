@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Stellaris惑星開発計算ツールver0.1</title>
+</head>
+<body>
+
+<script>
+
+Population = 0;
+
+//未使用、エネルギー、鉱物、食料、消費財、合金、研究、統合力、快適度
+Resource = new Array(0,0,0,0,0,0,0,0,0);
+
+//POP数、エネルギー、鉱物、食料、消費財、合金、研究、統合力、快適度
+Jobs = new Array();
+Jobs[ 0] = new Array(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);//事務員(予定)
+Jobs[ 1] = new Array(2,0,1,0,12,0,0,12,0,0,0,0,0,0,0,0,2);//職人
+Jobs[ 2] = new Array(2,0,1,0,12,0,0,0,0,6,0,0,0,0,0,0,2);//治金技師
+Jobs[ 3] = new Array(2,12,1,0,0,0,0,0,0,0,0,0,0,0,0,0,2);//技術者
+Jobs[ 4] = new Array(2,0,1,8,0,0,0,0,0,0,0,0,0,0,0,0,2);//鉱山労働者
+Jobs[ 5] = new Array(2,0,1,0,0,12,0,0,0,0,0,0,0,0,0,0,2);//農民
+Jobs[ 6] = new Array(2,0,2,0,0,0,0,0,2,0,0,8,0,0,0,0,2);//研究者
+Jobs[ 7] = new Array(2,0,2,0,0,0,0,0,2,0,0,0,0,12,0,0,2);//官僚
+Jobs[ 8] = new Array(2,0,2,0,0,0,0,0,1,0,0,0,0,0,0,20,2);//ｴﾝﾀｰﾃｲﾅｰ
+
+POP = new Array(0,0,0,0,0,0,0,0,0);
+
+function Plus(Num) {
+	POP[Num]++;
+	Calculation()
+}
+
+function Minus(Num) {
+	POP[Num]--;
+	Calculation()
+}
+
+Habitability = 1;
+
+function For03Sel00() {
+	HenA = document.For03.S00.selectedIndex;
+	switch (HenA) {
+		case 0: Habitability = 1; break;
+		case 1: Habitability = 0.8; break;
+		case 2: Habitability = 0.6; break;
+		case 3: Habitability = 0.4; break;
+	}
+	Calculation()
+}
+
+function Calculation() {
+	Population = 0;
+	for (HenA=0;HenA<=8;HenA++) {
+		Population+=POP[HenA]*Jobs[HenA][0];
+	}
+	//Amenities 各POPごとの幸福度、政治力、そこから惑星安定度を計算するのが面倒なので、雑に概算処理
+	HenA = 8;
+	Resource[HenA] = 0;
+	for (HenB=0;HenB<=8;HenB++) {
+		Resource[HenA] += POP[HenB]*Jobs[HenB][2*HenA-1]*(1-(1-Habitability)/2)-POP[HenB]*Jobs[HenB][2*HenA]*(1+(1-Habitability));
+	}
+	Resource[HenA] = Math.round(Resource[HenA]*100)/100;
+	if (Resource[8]>0) {
+		HenB = Resource[8]/Population;
+		if (HenB>1) { HenB = 1; }
+		AmenitiesCorrection = 1+HenB*0.12;
+	}
+	if (Resource[8]<=0) {
+		AmenitiesCorrection = 1+Resource[8]*0.02;
+	}
+	for (HenA=1;HenA<=7;HenA++) {
+		Resource[HenA] = 0;
+		for (HenB=0;HenB<=8;HenB++) {
+			Resource[HenA] += POP[HenB]*Jobs[HenB][2*HenA-1]*(1-(1-Habitability)/2)*AmenitiesCorrection-POP[HenB]*Jobs[HenB][2*HenA]*(1+(1-Habitability));
+		}
+		Resource[HenA] = Math.round(Resource[HenA]*100)/100;
+	}
+	Resource[3]+=Population*-1*(1+(1-Habitability));
+	Resource[3] = Math.round(Resource[3]*100)/100;
+
+	document.For02.Tex00.defaultValue = Population;
+
+	document.For00.Tex01.defaultValue = POP[1];
+	document.For00.Tex02.defaultValue = POP[2];
+	document.For00.Tex03.defaultValue = POP[3];
+	document.For00.Tex04.defaultValue = POP[4];
+	document.For00.Tex05.defaultValue = POP[5];
+	document.For01.Tex00.defaultValue = POP[6];
+	document.For01.Tex01.defaultValue = POP[7];
+	document.For01.Tex02.defaultValue = POP[8];
+	document.For00.Tex11.defaultValue = Resource[4];
+	document.For00.Tex12.defaultValue = Resource[5];
+	document.For00.Tex13.defaultValue = Resource[1];
+	document.For00.Tex14.defaultValue = Resource[2];
+	document.For00.Tex15.defaultValue = Resource[3];
+	document.For01.Tex10.defaultValue = Resource[6];
+	document.For01.Tex11.defaultValue = Resource[7];
+	document.For01.Tex12.defaultValue = Resource[8];
+}
+
+</script>
+
+<form name="For00"><table border=1 style="position:absolute; top:60px;left:20px;border-collapse:collapse;"><tr>
+<td><span style="color:blue">都市区域</span>　<input name="Tex00" type="text" size="1" value="0"></td>
+<td><span style="color:orange">消費財区域</span>　<input name="Tex01" type="text" size="1" value="0"></td>
+<td><span style="color:pink">合金区域</span>　<input name="Tex02" type="text" size="1" value="0"></td>
+<td><span style="color:gold">発電区域</span>　<input name="Tex03" type="text" size="1" value="0"></td>
+<td><span style="color:red">鉱業区域</span>　<input name="Tex04" type="text" size="1" value="0"></td>
+<td><span style="color:green">農業区域</span>　<input name="Tex05" type="text" size="1" value="0"></td>
+</tr><tr>
+<td><span style="color:blue">住居　　</span>　<input name="Tex10" type="text" size="1" value="0"></td>
+<td><span style="color:orange">消費財　　</span>　<input name="Tex11" type="text" size="1" value="0"></td>
+<td><span style="color:pink">合金　　</span>　<input name="Tex12" type="text" size="1" value="0"></td>
+<td><span style="color:gold">ｴﾈﾙｷﾞｰ　</span>　<input name="Tex13" type="text" size="1" value="0"></td>
+<td><span style="color:red">鉱物　　</span>　<input name="Tex14" type="text" size="1" value="0"></td>
+<td><span style="color:green">食料　　</span>　<input name="Tex15" type="text" size="1" value="0"></td>
+</tr>
+</tr><tr>
+<td>　<input type="button" value="追加" onclick="Plus(0)"><input type="button" value="削除" onclick="Minus(0)"></td>
+<td>　 <input type="button" value="追加" onclick="Plus(1)"><input type="button" value="削除" onclick="Minus(1)"></td>
+<td>　<input type="button" value="追加" onclick="Plus(2)"><input type="button" value="削除" onclick="Minus(2)"></td>
+<td>　<input type="button" value="追加" onclick="Plus(3)"><input type="button" value="削除" onclick="Minus(3)"></td>
+<td>　<input type="button" value="追加" onclick="Plus(4)"><input type="button" value="削除" onclick="Minus(4)"></td>
+<td>　<input type="button" value="追加" onclick="Plus(5)"><input type="button" value="削除" onclick="Minus(5)"></td>
+</tr>
+</table></form>
+
+<table border=1 style="position:absolute; top:160px;left:20px;border-collapse:collapse;"><form name="For01"><tr>
+<td><span>研究所</span>　<input name="Tex00" type="text" size="1" value="0"></td>
+<td><span>行政事務所</span>　<input name="Tex01" type="text" size="1" value="0"></td>
+<td><span>ﾎﾛｼｱﾀｰ</span>　<input name="Tex02" type="text" size="1" value="0"></td>
+</tr><tr>
+<td><span>研究力</span>　<input name="Tex10" type="text" size="1" value="0"></td>
+<td><span>統合力</span>　　　<input name="Tex11" type="text" size="1" value="0"></td>
+<td><span>快適度</span>　<input name="Tex12" type="text" size="1" value="0"></td>
+</tr><tr>
+<td>　<input type="button" value="追加" onclick="Plus(6)"><input type="button" value="削除" onclick="Minus(6)"></td>
+<td>　 <input type="button" value="追加" onclick="Plus(7)"><input type="button" value="削除" onclick="Minus(7)"></td>
+<td>　<input type="button" value="追加" onclick="Plus(8)"><input type="button" value="削除" onclick="Minus(8)"></td>
+</tr>
+</form></table>
+
+<table border=1 style="position:absolute; top:20px;left:20px;border-collapse:collapse;"><form name="For02"><tr>
+<td><span>POP数</span>　<input name="Tex00" type="text" size="1" value="0"></td>
+<td><span>安定度</span>　<input name="Tex01" type="text" size="1" value="未機能"></td>
+</tr>
+</form></table>
+
+<table border=1 style="position:absolute; top:240px;left:20px;border-collapse:collapse;"><tr><td><form name="For03"><select name="S00" onChange="For03Sel00()">
+	<option>居住性100％
+	<option>居住性80％
+	<option>居住性60％
+	<option>居住性40％
+</select></form>
+
+</body>
+</html>
